@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "474120190590",
+    "firebase_url": "https://hafalapps.firebaseio.com",
+    "project_id": "hafalapps",
+    "storage_bucket": "hafalapps.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:474120190590:android:d56cffc45543dd807ef62f",
+        "android_client_info": {
+          "package_name": "com.example.hafalapps"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "474120190590-akngipc6nv3in8d9fvachdqskogjvp5p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hafalapps",
+            "certificate_hash": "f7ea98b93e034e85f46eb3e8e2a663fd3367907f"
+          }
+        },
+        {
+          "client_id": "474120190590-vg4b0j3i7liru8i8lroj5umir281bhsu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6hUTLlWA3S34GYtMCMRHiFy3QcB0BKc0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "474120190590-vg4b0j3i7liru8i8lroj5umir281bhsu.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
