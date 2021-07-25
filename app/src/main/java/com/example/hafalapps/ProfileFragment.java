@@ -2,6 +2,7 @@ package com.example.hafalapps;
 
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.DialogInterface;
@@ -28,6 +29,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -72,10 +75,12 @@ public class ProfileFragment extends Fragment {
     StorageReference storageReference;
     //path where images of user profile and cover will be stored
     String storagePath = "Users_Profile_Cover_Imgs/";
-
+    String[] listItems;
     //views from xml
     ImageView avatarIv, coverIv;
     TextView nameTv, emailTv, phoneTv, statusTv;
+    RadioGroup rbJkGroup;
+    RadioButton rbL, rbP, rbSelected;
     FloatingActionButton fab;
 
     //progress dialog
@@ -154,6 +159,9 @@ public class ProfileFragment extends Fragment {
         emailTv = view.findViewById(R.id.emailTv);
         phoneTv = view.findViewById(R.id.phoneTv);
         statusTv = view.findViewById(R.id.statusTv);
+        rbJkGroup = view.findViewById(R.id.rb_jk_group);
+        rbL = view.findViewById(R.id.rb_l);
+        rbP = view.findViewById(R.id.rb_p);
         fab = view.findViewById(R.id.fab);
 
         //init progress dialog
@@ -174,7 +182,9 @@ public class ProfileFragment extends Fragment {
                     String status = "" + ds.child("status").getValue();
                     String image = "" + ds.child("image").getValue();
                     String cover = "" + ds.child("cover").getValue();
-
+                    String m1 = rbL + ds.child("Laki laki").toString();
+                    String m2 = rbP + ds.child("Perempuan").toString();
+                    String jeniskelamin = "" + ds.child("jenis kelamin").getValue();
                     //set data
                     nameTv.setText(name);
                     emailTv.setText(email);
@@ -251,10 +261,11 @@ public class ProfileFragment extends Fragment {
          * 3) Edit name
          * 4) Edit phone
          * 5) Edit status
-         * 6) Chanege Password*/
+         * 6.) Edit Jenis Kelamin
+         * 7) Chanege Password*/
 
         //option to show in dialog
-        String options[] = {"Edit Profile Picture", "Edit Cover Photo", "Edit Name", "Edit Phone", "Edit Status", "Change Password"};
+        String options[] = {"Edit Profile Picture", "Edit Cover Photo", "Edit Name", "Edit Phone", "Edit Status", "Edit Jenis Kelamin", "Change Password"};
         //alert dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         //set title
@@ -288,10 +299,75 @@ public class ProfileFragment extends Fragment {
                     pd.setMessage("Updating Status");
                     showStatusDialog("status");
                 } else if (which == 5) {
+                    //Edit jenis kelamin clicked
+                    pd.setMessage("Updating Jenis Kelamin");
+                    showJenisKelaminDialog("jenis kelamin");
+                } else if (which == 6) {
                     //Edit phone clicked
                     pd.setMessage("Change Password");
                     showChangePasswordDialog();
                 }
+            }
+        });
+        //create and show dialog
+        builder.create().show();
+    }
+
+    private void showJenisKelaminDialog(final String jenis_kelamin) {
+        //custom dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Update " + jenis_kelamin); //update name OR update phone
+        //set layout of dialog
+        LinearLayout linearLayout = new LinearLayout(getActivity());
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        linearLayout.setPadding(10, 10, 10, 10);
+        //add edit text
+        final EditText editText = new EditText(getActivity());
+        editText.setHint("Enter " + jenis_kelamin); //hint edit name OR edit phone
+        linearLayout.addView(editText);
+
+        builder.setView(linearLayout);
+
+        //add button in dialog to update
+        builder.setPositiveButton("Update", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //input text from edit text
+                String value = editText.getText().toString().trim();
+                //validate if user has entered something or not
+                if (!TextUtils.isEmpty(value)) {
+                    pd.show();
+                    HashMap<String, Object> result = new HashMap<>();
+                    result.put(jenis_kelamin, value);
+
+                    databaseReference.child(user.getUid()).updateChildren(result)
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    //updated, dismiss progress
+                                    pd.dismiss();
+                                    Toast.makeText(getActivity(), "Updated...", Toast.LENGTH_SHORT).show();
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    //failed, dismiss progress, get and show error message
+                                    pd.dismiss();
+                                    Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                } else {
+                    Toast.makeText(getActivity(), "Please enter" + jenis_kelamin, Toast.LENGTH_SHORT).show();
+
+                }
+            }
+        });
+        //add button in dialog to cancel
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //dialog.dismiss();
             }
         });
         //create and show dialog
@@ -321,11 +397,11 @@ public class ProfileFragment extends Fragment {
                 String oldPassword = passwordEt.getText().toString().trim();
                 String newPassword = newPasswordEt.getText().toString().trim();
 
-                if (TextUtils.isEmpty(oldPassword)){
+                if (TextUtils.isEmpty(oldPassword)) {
                     Toast.makeText(getActivity(), "Enter your current password...", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                if (newPassword.length()<6){
+                if (newPassword.length() < 6) {
                     Toast.makeText(getActivity(), "Password length must atleast & character...", Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -363,7 +439,7 @@ public class ProfileFragment extends Fragment {
                                     public void onFailure(@NonNull Exception e) {
                                         //failed updating password, show reason
                                         pd.dismiss();
-                                        Toast.makeText(getActivity(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
                                     }
                                 });
                     }
@@ -373,22 +449,22 @@ public class ProfileFragment extends Fragment {
                     public void onFailure(@NonNull Exception e) {
                         //authentication failed, show reason
                         pd.dismiss();
-                        Toast.makeText(getActivity(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-        });
+                        Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     private void showNamePhoneUpdateDialog(final String key) {
         //custom dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle("Update "+ key); //update name OR update phone
+        builder.setTitle("Update " + key); //update name OR update phone
         //set layout of dialog
         LinearLayout linearLayout = new LinearLayout(getActivity());
         linearLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.setPadding(10,10,10,10);
+        linearLayout.setPadding(10, 10, 10, 10);
         //add edit text
         final EditText editText = new EditText(getActivity());
-        editText.setHint("Enter "+ key); //hint edit name OR edit phone
+        editText.setHint("Enter " + key); //hint edit name OR edit phone
         linearLayout.addView(editText);
 
         builder.setView(linearLayout);
@@ -400,7 +476,7 @@ public class ProfileFragment extends Fragment {
                 //input text from edit text
                 String value = editText.getText().toString().trim();
                 //validate if user has entered something or not
-                if (!TextUtils.isEmpty(value)){
+                if (!TextUtils.isEmpty(value)) {
                     pd.show();
                     HashMap<String, Object> result = new HashMap<>();
                     result.put(key, value);
@@ -415,16 +491,15 @@ public class ProfileFragment extends Fragment {
                                 }
                             })
                             .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
                                     //failed, dismiss progress, get and show error message
-                            pd.dismiss();
-                            Toast.makeText(getActivity(), ""+e.getMessage(), Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                }
-                else {
-                    Toast.makeText(getActivity(), "Please enter"+key, Toast.LENGTH_SHORT).show();
+                                    pd.dismiss();
+                                    Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                } else {
+                    Toast.makeText(getActivity(), "Please enter" + key, Toast.LENGTH_SHORT).show();
 
                 }
             }
@@ -440,11 +515,12 @@ public class ProfileFragment extends Fragment {
         builder.create().show();
     }
 
-    private void showStatusDialog(final String key1){
+    private void showStatusDialog(final String key1) {
         //custom dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle("Update "+ key1); //update name OR update phone
         //set layout of dialog
+
         LinearLayout linearLayout = new LinearLayout(getActivity());
         linearLayout.setOrientation(LinearLayout.VERTICAL);
         linearLayout.setPadding(10,10,10,10);
@@ -500,8 +576,61 @@ public class ProfileFragment extends Fragment {
         });
         //create and show dialog
         builder.create().show();
+        /*AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setTitle("Update "+ key1); //update name OR update phone
+        builder.setIcon(R.drawable.ic_add_image);
 
+        final EditText editText = new EditText(getActivity());
+        listItems = new String[]{"Santri", "Ustaz"};
+        builder.setSingleChoiceItems(listItems, -1, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                statusTv.setText(listItems[i]);
+            }
+        });
+        builder.setPositiveButton("Update", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String value = editText.getText().toString().trim();
+                if (!TextUtils.isEmpty(value)) {
+                    pd.show();
+                    HashMap<String, Object> result = new HashMap<>();
+                    result.put(key1, value);
+
+                    databaseReference.child(user.getUid()).updateChildren(result)
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    //updated, dismiss progress
+                                    pd.dismiss();
+                                    Toast.makeText(getActivity(), "Updated...", Toast.LENGTH_SHORT).show();
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    //failed, dismiss progress, get and show error message
+                                    pd.dismiss();
+                                    Toast.makeText(getActivity(), "" + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                } else {
+                    Toast.makeText(getActivity(), "Please enter " + key1, Toast.LENGTH_SHORT).show();
+
+                }
+            }
+        });
+        //add button in dialog to cancel
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                //dialog.dismiss();
+            }
+        });
+        //create and show dialog
+        builder.create().show();*/
     }
+
 
     private void showImagePicDialog() {
         //show dialog containing options camera and gallery to pick the image

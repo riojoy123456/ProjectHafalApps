@@ -1,0 +1,254 @@
+package com.example.hafalapps.SurahActivity;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.Manifest;
+import android.app.ProgressDialog;
+import android.content.Intent;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Bundle;
+import android.provider.OpenableColumns;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.example.hafalapps.R;
+import com.example.hafalapps.models.ModelAlqodr;
+import com.example.jean.jcplayer.model.JcAudio;
+import com.example.jean.jcplayer.view.JcPlayerView;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.OnProgressListener;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
+
+import java.util.ArrayList;
+
+public class AlqodrActivity extends AppCompatActivity {
+    private boolean checkPermission = false;
+    Uri uri;
+    String surahName, surahUrl;
+    ListView listView;
+
+    ArrayList<String> arrayListSurahName = new ArrayList<>();
+    ArrayList<String> arrayListSurahUrl = new ArrayList<>();
+    ArrayAdapter<String> arrayAdapter;
+
+    JcPlayerView jcPlayerView;
+    ArrayList<JcAudio> jcAudios = new ArrayList<>();
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_alqodr);
+        listView = findViewById(R.id.myListView);
+        jcPlayerView = findViewById(R.id.jcplayer);
+
+        retrieveSurah();
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                jcPlayerView.playAudio(jcAudios.get(position));
+                jcPlayerView.setVisibility(View.VISIBLE);
+                jcPlayerView.createNotification();
+            }
+        });
+
+    }
+    private void retrieveSurah() {
+
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("Alqodr");
+
+        databaseReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+
+                for (DataSnapshot ds: dataSnapshot.getChildren()){
+
+                    ModelAlqodr alqodrOjb = ds.getValue(ModelAlqodr.class);
+                    arrayListSurahName.add(alqodrOjb.getSurahName());
+                    arrayListSurahUrl.add(alqodrOjb.getSurahUrl());
+                    jcAudios.add(JcAudio.createFromURL(alqodrOjb.getSurahName(),alqodrOjb.getSurahUrl()));
+
+
+                }
+                arrayAdapter = new ArrayAdapter<String>(AlqodrActivity.this,android.R.layout.simple_list_item_1,arrayListSurahName){
+
+                    @NonNull
+                    @Override
+                    public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+
+                        View view = super.getView(position, convertView, parent);
+                        TextView textView = (TextView)view.findViewById(android.R.id.text1);
+
+                        textView.setSingleLine(true);
+                        textView.setMaxLines(1);
+
+                        return view;
+                    }
+                };
+                jcPlayerView.initPlaylist(jcAudios, null);
+                listView.setAdapter(arrayAdapter);
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.custom_menu,menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        if (item.getItemId()==R.id.nav_upload){
+            if (validatePermission()){
+                pickSong();
+            }
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void pickSong() {
+        Intent intent_uploud = new Intent();
+        intent_uploud.setType("audio/*");
+        intent_uploud.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(intent_uploud,1);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (requestCode ==1){
+            if (resultCode ==RESULT_OK){
+
+                uri = data.getData();
+
+                Cursor mcursor = getApplicationContext().getContentResolver()
+                        .query(uri, null,null,null, null);
+
+                int indexedname = mcursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                mcursor.moveToFirst();
+                surahName = mcursor.getString(indexedname);
+                mcursor.close();
+
+                uploadHafalanToFirebaseStorage();
+
+            }
+        }
+
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private void uploadHafalanToFirebaseStorage() {
+        StorageReference storageReference = FirebaseStorage.getInstance().getReference()
+                .child("Alqodr").child(uri.getLastPathSegment());
+
+        final ProgressDialog progressDialog = new ProgressDialog(this);
+        progressDialog.show();
+
+        storageReference.putFile(uri).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
+                while (!uriTask.isComplete());
+                Uri urlSurah = uriTask.getResult();
+                surahUrl = urlSurah.toString();
+
+                uploadDetailsToDatabase();
+                progressDialog.dismiss();
+
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(AlqodrActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                progressDialog.dismiss();
+            }
+        }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onProgress(@NonNull UploadTask.TaskSnapshot taskSnapshot) {
+                double progres = (100.0*taskSnapshot.getBytesTransferred())/taskSnapshot.getTotalByteCount();
+                int currentProgress = (int)progres;
+                progressDialog.setMessage("Uploaded: "+currentProgress+"%");
+            }
+        });
+
+    }
+
+    private void uploadDetailsToDatabase() {
+        ModelAlqodr surahObj = new ModelAlqodr(surahName, surahUrl);
+
+        FirebaseDatabase.getInstance().getReference("Alqodr")
+                .push().setValue(surahObj).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()){
+                    Toast.makeText(AlqodrActivity.this, "Surah Uploaded", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(AlqodrActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private boolean validatePermission(){
+        Dexter.withActivity(AlqodrActivity.this)
+                .withPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
+                .withListener(new PermissionListener() {
+                    @Override
+                    public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
+                        checkPermission = true;
+                    }
+
+                    @Override
+                    public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
+                        checkPermission = false;
+                    }
+
+                    @Override
+                    public void onPermissionRationaleShouldBeShown(PermissionRequest permissionRequest, PermissionToken token) {
+                        token.continuePermissionRequest();
+                    }
+                }).check();
+
+        return checkPermission;
+    }
+}

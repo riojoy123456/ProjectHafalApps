@@ -1,4 +1,4 @@
-package com.example.hafalapps;
+package com.example.hafalapps.SurahActivity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,7 +21,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.hafalapps.models.ModelSurah;
+import com.example.hafalapps.R;
+import com.example.hafalapps.models.ModelAlkautsar;
 import com.example.jean.jcplayer.model.JcAudio;
 import com.example.jean.jcplayer.view.JcPlayerView;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -46,8 +47,7 @@ import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.util.ArrayList;
 
-public class AnnasActivity extends AppCompatActivity {
-
+public class AlkautsarActivity extends AppCompatActivity {
     private boolean checkPermission = false;
     Uri uri;
     String surahName, surahUrl;
@@ -57,15 +57,13 @@ public class AnnasActivity extends AppCompatActivity {
     ArrayList<String> arrayListSurahUrl = new ArrayList<>();
     ArrayAdapter<String> arrayAdapter;
 
-
     JcPlayerView jcPlayerView;
     ArrayList<JcAudio> jcAudios = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_annas);
-
+        setContentView(R.layout.activity_alkautsar);
         listView = findViewById(R.id.myListView);
         jcPlayerView = findViewById(R.id.jcplayer);
 
@@ -84,33 +82,32 @@ public class AnnasActivity extends AppCompatActivity {
 
     private void retrieveSurah() {
 
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("ANNas");
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("Alkautsar");
 
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
 
-                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                for (DataSnapshot ds: dataSnapshot.getChildren()){
 
-                    ModelSurah surahOjb = ds.getValue(ModelSurah.class);
-                    arrayListSurahName.add(surahOjb.getSurahName());
-                    arrayListSurahUrl.add(surahOjb.getSurahUrl());
-                    jcAudios.add(JcAudio.createFromURL(surahOjb.getSurahName(), surahOjb.getSurahUrl()));
+                    ModelAlkautsar alkautsarOjb = ds.getValue(ModelAlkautsar.class);
+                    arrayListSurahName.add(alkautsarOjb.getSurahName());
+                    arrayListSurahUrl.add(alkautsarOjb.getSurahUrl());
+                    jcAudios.add(JcAudio.createFromURL(alkautsarOjb.getSurahName(),alkautsarOjb.getSurahUrl()));
+
 
                 }
-
-                arrayAdapter = new ArrayAdapter<String>(AnnasActivity.this, android.R.layout.simple_list_item_1, arrayListSurahName) {
+                arrayAdapter = new ArrayAdapter<String>(AlkautsarActivity.this,android.R.layout.simple_list_item_1,arrayListSurahName){
 
                     @NonNull
                     @Override
                     public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
 
                         View view = super.getView(position, convertView, parent);
-                        TextView textView = (TextView) view.findViewById(android.R.id.text1);
+                        TextView textView = (TextView)view.findViewById(android.R.id.text1);
 
                         textView.setSingleLine(true);
                         textView.setMaxLines(1);
-
 
                         return view;
                     }
@@ -129,46 +126,45 @@ public class AnnasActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.custom_menu, menu);
+        getMenuInflater().inflate(R.menu.custom_menu,menu);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
 
-        if (item.getItemId() == R.id.nav_upload) {
-            if (validatePermission()) {
-                pickAlfatihah();
+        if (item.getItemId()==R.id.nav_upload){
+            if (validatePermission()){
+                pickSong();
             }
-
         }
+
         return super.onOptionsItemSelected(item);
     }
 
-    private void pickAlfatihah() {
-
+    private void pickSong() {
         Intent intent_uploud = new Intent();
         intent_uploud.setType("audio/*");
         intent_uploud.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(intent_uploud, 1);
-
+        startActivityForResult(intent_uploud,1);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (requestCode == 1) {
-            if (resultCode == RESULT_OK) {
+        if (requestCode ==1){
+            if (resultCode ==RESULT_OK){
 
                 uri = data.getData();
+
                 Cursor mcursor = getApplicationContext().getContentResolver()
-                        .query(uri, null, null, null, null);
+                        .query(uri, null,null,null, null);
+
                 int indexedname = mcursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                 mcursor.moveToFirst();
                 surahName = mcursor.getString(indexedname);
                 mcursor.close();
 
                 uploadHafalanToFirebaseStorage();
-
 
             }
         }
@@ -177,9 +173,9 @@ public class AnnasActivity extends AppCompatActivity {
     }
 
     private void uploadHafalanToFirebaseStorage() {
-
         StorageReference storageReference = FirebaseStorage.getInstance().getReference()
-                .child("ANNas").child(uri.getLastPathSegment());
+                .child("Alkautsar").child(uri.getLastPathSegment());
+
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.show();
 
@@ -188,65 +184,61 @@ public class AnnasActivity extends AppCompatActivity {
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
 
                 Task<Uri> uriTask = taskSnapshot.getStorage().getDownloadUrl();
-                while (!uriTask.isComplete()) ;
+                while (!uriTask.isComplete());
                 Uri urlSurah = uriTask.getResult();
                 surahUrl = urlSurah.toString();
 
                 uploadDetailsToDatabase();
                 progressDialog.dismiss();
 
-
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(AnnasActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(AlkautsarActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
                 progressDialog.dismiss();
             }
         }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onProgress(@NonNull UploadTask.TaskSnapshot taskSnapshot) {
-                double progres = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-                int currentProgress = (int) progres;
-                progressDialog.setMessage("Uploaded: " + currentProgress + "%");
+                double progres = (100.0*taskSnapshot.getBytesTransferred())/taskSnapshot.getTotalByteCount();
+                int currentProgress = (int)progres;
+                progressDialog.setMessage("Uploaded: "+currentProgress+"%");
             }
         });
 
     }
 
     private void uploadDetailsToDatabase() {
+            ModelAlkautsar surahObj = new ModelAlkautsar(surahName, surahUrl);
 
-        ModelSurah surahObj = new ModelSurah(surahName, surahUrl);
-
-        FirebaseDatabase.getInstance().getReference("ANNas")
+        FirebaseDatabase.getInstance().getReference("Alkautsar")
                 .push().setValue(surahObj).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful()) {
-                    Toast.makeText(AnnasActivity.this, "Surah Uploaded", Toast.LENGTH_SHORT).show();
+                if (task.isSuccessful()){
+                    Toast.makeText(AlkautsarActivity.this, "Surah Uploaded", Toast.LENGTH_SHORT).show();
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(AnnasActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(AlkautsarActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private boolean validatePermission() {
-
-        Dexter.withActivity(AnnasActivity.this)
+    private boolean validatePermission(){
+        Dexter.withActivity(AlkautsarActivity.this)
                 .withPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                 .withListener(new PermissionListener() {
                     @Override
-                    public void onPermissionGranted(PermissionGrantedResponse response) {
+                    public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
                         checkPermission = true;
-
                     }
 
                     @Override
-                    public void onPermissionDenied(PermissionDeniedResponse response) {
+                    public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
                         checkPermission = false;
                     }
 

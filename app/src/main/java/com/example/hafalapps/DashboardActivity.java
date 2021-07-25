@@ -44,11 +44,11 @@ public class DashboardActivity extends AppCompatActivity {
         navigationView.setOnNavigationItemSelectedListener(selectedListener);
 
         //home Profile transaction (default, on start)
-        actionBar.setTitle("Profile");//change actionBar title
-        ProfileFragment fragment2 = new ProfileFragment();
-        FragmentTransaction ft2 = getSupportFragmentManager().beginTransaction();
-        ft2.replace(R.id.content, fragment2, "");
-        ft2.commit();
+        actionBar.setTitle("Murajaah");//change actionBar title
+        MurajaahFragment fragment1 = new MurajaahFragment();
+        FragmentTransaction ft1 = getSupportFragmentManager().beginTransaction();
+        ft1.replace(R.id.content, fragment1, "");
+        ft1.commit();
 
         checkUserStatus();
 
@@ -140,8 +140,8 @@ public class DashboardActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        finish();
+       // super.onBackPressed();
+        //finish();
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.example.hafalapps;
+package com.example.hafalapps.SurahActivity;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,7 +21,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.hafalapps.models.ModelSurah;
+import com.example.hafalapps.R;
+import com.example.hafalapps.models.ModelAlikhlas;
 import com.example.jean.jcplayer.model.JcAudio;
 import com.example.jean.jcplayer.view.JcPlayerView;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -46,7 +47,7 @@ import com.karumi.dexter.listener.single.PermissionListener;
 
 import java.util.ArrayList;
 
-public class MurajaahActivity extends AppCompatActivity {
+public class AlikhlasActivity extends AppCompatActivity {
 
     private boolean checkPermission = false;
     Uri uri;
@@ -57,14 +58,14 @@ public class MurajaahActivity extends AppCompatActivity {
     ArrayList<String> arrayListSurahUrl = new ArrayList<>();
     ArrayAdapter<String> arrayAdapter;
 
-
     JcPlayerView jcPlayerView;
     ArrayList<JcAudio> jcAudios = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_murajaah);
+        setContentView(R.layout.activity_alikhlas);
+
         listView = findViewById(R.id.myListView);
         jcPlayerView = findViewById(R.id.jcplayer);
 
@@ -83,7 +84,7 @@ public class MurajaahActivity extends AppCompatActivity {
 
     private void retrieveSurah() {
 
-        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("Alfatihah");
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("Alikhlas");
 
         databaseReference.addValueEventListener(new ValueEventListener() {
             @Override
@@ -91,14 +92,14 @@ public class MurajaahActivity extends AppCompatActivity {
 
                 for (DataSnapshot ds: dataSnapshot.getChildren()){
 
-                    ModelSurah surahOjb = ds.getValue(ModelSurah.class);
-                    arrayListSurahName.add(surahOjb.getSurahName());
-                    arrayListSurahUrl.add(surahOjb.getSurahUrl());
-                    jcAudios.add(JcAudio.createFromURL(surahOjb.getSurahName(),surahOjb.getSurahUrl()));
+                    ModelAlikhlas alikhlasOjb = ds.getValue(ModelAlikhlas.class);
+                    arrayListSurahName.add(alikhlasOjb.getSurahName());
+                    arrayListSurahUrl.add(alikhlasOjb.getSurahUrl());
+                    jcAudios.add(JcAudio.createFromURL(alikhlasOjb.getSurahName(),alikhlasOjb.getSurahUrl()));
+
 
                 }
-
-                arrayAdapter = new ArrayAdapter<String>(MurajaahActivity.this,android.R.layout.simple_list_item_1,arrayListSurahName){
+                arrayAdapter = new ArrayAdapter<String>(AlikhlasActivity.this,android.R.layout.simple_list_item_1,arrayListSurahName){
 
                     @NonNull
                     @Override
@@ -110,13 +111,13 @@ public class MurajaahActivity extends AppCompatActivity {
                         textView.setSingleLine(true);
                         textView.setMaxLines(1);
 
-
-
                         return view;
                     }
                 };
                 jcPlayerView.initPlaylist(jcAudios, null);
                 listView.setAdapter(arrayAdapter);
+
+
 
             }
 
@@ -138,19 +139,18 @@ public class MurajaahActivity extends AppCompatActivity {
 
         if (item.getItemId()==R.id.nav_upload){
             if (validatePermission()){
-                pickAlfatihah();
+                pickSong();
             }
-
         }
+
         return super.onOptionsItemSelected(item);
     }
-    private void pickAlfatihah() {
 
+    private void pickSong() {
         Intent intent_uploud = new Intent();
         intent_uploud.setType("audio/*");
         intent_uploud.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(intent_uploud, 1);
-
+        startActivityForResult(intent_uploud,1);
     }
 
     @Override
@@ -159,15 +159,16 @@ public class MurajaahActivity extends AppCompatActivity {
             if (resultCode ==RESULT_OK){
 
                 uri = data.getData();
+
                 Cursor mcursor = getApplicationContext().getContentResolver()
-                        .query(uri, null,null,null,null);
+                        .query(uri, null,null,null, null);
+
                 int indexedname = mcursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
                 mcursor.moveToFirst();
                 surahName = mcursor.getString(indexedname);
                 mcursor.close();
 
                 uploadHafalanToFirebaseStorage();
-
 
             }
         }
@@ -176,9 +177,9 @@ public class MurajaahActivity extends AppCompatActivity {
     }
 
     private void uploadHafalanToFirebaseStorage() {
-
         StorageReference storageReference = FirebaseStorage.getInstance().getReference()
-                .child("Alfatihah").child(uri.getLastPathSegment());
+                .child("Alikhlas").child(uri.getLastPathSegment());
+
         final ProgressDialog progressDialog = new ProgressDialog(this);
         progressDialog.show();
 
@@ -194,13 +195,11 @@ public class MurajaahActivity extends AppCompatActivity {
                 uploadDetailsToDatabase();
                 progressDialog.dismiss();
 
-
-
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(MurajaahActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(AlikhlasActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
                 progressDialog.dismiss();
             }
         }).addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
@@ -215,38 +214,35 @@ public class MurajaahActivity extends AppCompatActivity {
     }
 
     private void uploadDetailsToDatabase() {
+        ModelAlikhlas surahObj = new ModelAlikhlas(surahName, surahUrl);
 
-        ModelSurah surahObj = new ModelSurah(surahName, surahUrl);
-
-        FirebaseDatabase.getInstance().getReference("Alfatihah")
+        FirebaseDatabase.getInstance().getReference("Alikhlas")
                 .push().setValue(surahObj).addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()){
-                    Toast.makeText(MurajaahActivity.this, "Surah Uploaded", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AlikhlasActivity.this, "Surah Uploaded", Toast.LENGTH_SHORT).show();
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(MurajaahActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(AlikhlasActivity.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     private boolean validatePermission(){
-
-        Dexter.withActivity(MurajaahActivity.this)
+        Dexter.withActivity(AlikhlasActivity.this)
                 .withPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
                 .withListener(new PermissionListener() {
                     @Override
-                    public void onPermissionGranted(PermissionGrantedResponse response) {
+                    public void onPermissionGranted(PermissionGrantedResponse permissionGrantedResponse) {
                         checkPermission = true;
-
                     }
 
                     @Override
-                    public void onPermissionDenied(PermissionDeniedResponse response) {
+                    public void onPermissionDenied(PermissionDeniedResponse permissionDeniedResponse) {
                         checkPermission = false;
                     }
 
@@ -258,5 +254,4 @@ public class MurajaahActivity extends AppCompatActivity {
 
         return checkPermission;
     }
-
 }

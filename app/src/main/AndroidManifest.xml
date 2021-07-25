@@ -14,17 +14,37 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".AnnasActivity"></activity>
-        <activity android:name=".MurajaahActivity" />
+        <activity android:name=".SurahActivity.AttinActivity"></activity>
+        <activity android:name=".SurahActivity.AlalaqActivity" />
+        <activity android:name=".SurahActivity.AlqodrActivity" />
+        <activity android:name=".SurahActivity.AlbayyinahActivity" />
+        <activity android:name=".SurahActivity.AzzalzalahActivity" />
+        <activity android:name=".SurahActivity.AladiatActivity" />
+        <activity android:name=".SurahActivity.AlqoriahActivity" />
+        <activity android:name=".SurahActivity.AttakasurActivity" />
+        <activity android:name=".SurahActivity.AlasrActivity" />
+        <activity android:name=".SurahActivity.AlhumazahActivity" />
+        <activity android:name=".SurahActivity.AlfilActivity" />
+        <activity android:name=".SurahActivity.AlquraisyActivity" />
+        <activity android:name=".SurahActivity.AlmaunActivity" />
+        <activity android:name=".SurahActivity.AlkautsarActivity" />
+        <activity android:name=".SurahActivity.AlkafirunActivity" />
+        <activity android:name=".SurahActivity.AnnasrActivity" />
+        <activity android:name=".SurahActivity.Al_LahabActivity" />
+        <activity android:name=".SurahActivity.AlikhlasActivity" />
+        <activity android:name=".SurahActivity.AlfalaqActivity" />
+        <activity android:name=".SurahActivity.AnnasActivity" />
+        <activity android:name=".SurahActivity.MurajaahActivity" />
         <activity
             android:name=".PenilaianActivity"
             android:theme="@style/AppThemeNo" />
         <activity android:name=".AlarmActivity" />
+        <activity android:name=".MainActivity" />
         <activity android:name=".LoginActivity" />
         <activity android:name=".DashboardActivity" />
         <activity android:name=".RegisterActivity" />
         <activity
-            android:name=".MainActivity"
+            android:name=".Splash_screen"
             android:theme="@style/AppThemeNo">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
